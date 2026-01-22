@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zelpik - Muro de Nati</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             --dorado: #d4af37; --negro: #1a1a1a; --blanco: #ffffff;
@@ -68,7 +68,7 @@
     <div id="content-area">
         <div id="slide-qr" class="slide active">
             <h2>Escaneá y subí tu foto</h2>
-            <img src="qr.png" id="qr-img">
+            <div id="qrcode-container" style="background: white; padding: 20px; border-radius: 10px;"></div>
         </div>
         <div id="slide-foto" class="slide">
             <div class="foto-frame"><img src="" id="display-foto"></div>
@@ -149,8 +149,14 @@
             // Después de 10 segundos de lo nuevo, retomamos el carrusel normal
             setTimeout(ejecutarPasoCarrusel, 10000);
         });
-
+            // Generar QR dinámico con la URL actual
+new QRCode(document.getElementById("qrcode-container"), {
+    text: window.location.origin, // Usa la URL real de Render automáticamente
+    width: 400,
+    height: 400
+});
         cargarFotos();
     </script>
 </body>
+
 </html>

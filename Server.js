@@ -3,73 +3,57 @@ const http = require('http');
 const socketIo = require('socket.io');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const cloudinary = require('cloudinary').v2; // Nueva herramienta
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// Aseguramos que la carpeta uploads exista
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) { fs.mkdirSync(uploadDir); }
-
-const storage = multer.diskStorage({
-    destination: uploadDir,
-    filename: (req, file, cb) => {
-        cb(null, 'zelpik-' + Date.now() + path.extname(file.originalname));
-    }
+// 🛠️ CONFIGURACIÓN DE CLOUDINARY (Completá con tus datos)
+cloudinary.config({ 
+  cloud_name: 'dbfpwj66a', 
+  api_key: '112943158399347', 
+  api_secret: 'EDOd1H3CZrhVnVuvS91J8bPToCg' 
 });
+
+// Configuramos el almacenamiento para que vaya directo a la nube
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'zelpik_fotos',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'gif'],
+  },
+});
+
 const upload = multer({ storage: storage });
 
-// Servimos archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(uploadDir));
 app.use(express.json());
 
-// RUTAS PRINCIPALES
-app.get('/', (req, res) => { 
-    res.sendFile(path.join(__dirname, 'public', 'Index.html')); 
-});
+// RUTAS
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'Index.html')); });
+app.get('/muro', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'Pantalla.html')); });
 
-app.get('/muro', (req, res) => {
-    const pathPantalla = path.join(__dirname, 'public', 'Pantalla.html');
-    if (fs.existsSync(pathPantalla)) {
-        res.sendFile(pathPantalla);
-    } else {
-        res.status(404).send("Error: No encontré el archivo Pantalla.html en la carpeta public. Revisá GitHub.");
-    }
-});
-
-app.get('/fotos-existentes', (req, res) => {
-    fs.readdir(uploadDir, (err, files) => {
-        if (err) return res.json([]);
-        const fotos = files.filter(f => /\.(jpg|jpeg|png|gif)$/i.test(f)).map(f => `/uploads/${f}`);
-        res.json(fotos);
-    });
-});
-
+// Ruta para subir fotos a Cloudinary
 app.post('/upload', upload.single('foto'), (req, res) => {
-    if (req.file) {
-        const urlFoto = `/uploads/${req.file.filename}`;
+    if (req.file && req.file.path) {
+        // La URL ahora es la que nos da Cloudinary
+        const urlFoto = req.file.path; 
         io.emit('nuevo_contenido', { tipo: 'foto', url: urlFoto });
         res.status(200).send('OK');
-    } else { res.status(400).send('Error'); }
+    } else {
+        res.status(400).send('Error al subir');
+    }
 });
 
 io.on('connection', (socket) => {
     socket.on('nuevo_mensaje', (msg) => {
-        const fecha = new Date().toLocaleString();
-        const registro = `[${fecha}] Mensaje: ${msg}\n`;
-        fs.appendFile('mensajes_de_invitados.txt', registro, (err) => {
-            if (err) console.error("Error al guardar mensaje");
-        });
         io.emit('nuevo_contenido', { tipo: 'texto', mensaje: msg });
     });
 });
 
-// PUERTO DINÁMICO PARA RENDER
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ ZELPIK ONLINE EN PUERTO ${PORT}`);
+    console.log(`✅ ZELPIK ONLINE CON CLOUDINARY`);
 });
-

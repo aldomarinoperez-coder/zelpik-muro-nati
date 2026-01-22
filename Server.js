@@ -31,8 +31,13 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'Index.html')); 
 });
 
-app.get('/muro', (req, res) => { 
-    res.sendFile(path.join(__dirname, 'public', 'Pantalla.html')); 
+app.get('/muro', (req, res) => {
+    const pathPantalla = path.join(__dirname, 'public', 'Pantalla.html');
+    if (fs.existsSync(pathPantalla)) {
+        res.sendFile(pathPantalla);
+    } else {
+        res.status(404).send("Error: No encontré el archivo Pantalla.html en la carpeta public. Revisá GitHub.");
+    }
 });
 
 app.get('/fotos-existentes', (req, res) => {
@@ -67,3 +72,4 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ ZELPIK ONLINE EN PUERTO ${PORT}`);
 });
+

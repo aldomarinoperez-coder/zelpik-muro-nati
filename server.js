@@ -9,6 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+// Aseguramos que la carpeta uploads exista
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) { fs.mkdirSync(uploadDir); }
 
@@ -20,12 +21,19 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+// Servimos archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(uploadDir));
 app.use(express.json());
 
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'Index.html')); });
-app.get('/muro', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'Pantalla.html')); });
+// RUTAS PRINCIPALES
+app.get('/', (req, res) => { 
+    res.sendFile(path.join(__dirname, 'public', 'Index.html')); 
+});
+
+app.get('/muro', (req, res) => { 
+    res.sendFile(path.join(__dirname, 'public', 'Pantalla.html')); 
+});
 
 app.get('/fotos-existentes', (req, res) => {
     fs.readdir(uploadDir, (err, files) => {
@@ -47,21 +55,15 @@ io.on('connection', (socket) => {
     socket.on('nuevo_mensaje', (msg) => {
         const fecha = new Date().toLocaleString();
         const registro = `[${fecha}] Mensaje: ${msg}\n`;
-        
-        // Guardamos en un archivo de texto por seguridad
         fs.appendFile('mensajes_de_invitados.txt', registro, (err) => {
-            if (err) console.error("No se pudo guardar el mensaje");
+            if (err) console.error("Error al guardar mensaje");
         });
-
         io.emit('nuevo_contenido', { tipo: 'texto', mensaje: msg });
     });
 });
 
-// CONFIGURACIÓN PARA SERVIDOR ONLINE
-// Usamos el puerto que nos asigne la plataforma (process.env.PORT) o el 3000 por defecto
+// PUERTO DINÁMICO PARA RENDER
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ ZELPIK ONLINE`);
-    console.log(`Puerto asignado: ${PORT}`);
+    console.log(`✅ ZELPIK ONLINE EN PUERTO ${PORT}`);
 });

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zelpik - 15 Años Nati</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root {
+            --salmon: #ff8c7a;
+            --dorado: #d4af37;
+            --negro: #1a1a1a;
+            --blanco: #ffffff;
+            --gris-fundo: #f8f9fa;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--gris-fundo);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+            color: var(--negro);
+        }
+
+        .header {
+            width: 100%; background-color: var(--negro);
+            padding: 25px 0; text-align: center;
+            border-bottom: 4px solid var(--dorado);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .header h1 { color: var(--blanco); margin: 0; font-size: 1.6rem; letter-spacing: 3px; font-weight: 300; }
+        .header span { color: var(--dorado); font-weight: bold; }
+
+        .main {
+            padding: 20px; display: flex; flex-direction: column;
+            align-items: center; width: 90%; max-width: 400px;
+            flex-grow: 1;
+        }
+
+        .bienvenida { text-align: center; margin: 30px 0; }
+        .bienvenida h3 { font-size: 1.8rem; margin-bottom: 10px; }
+        .bienvenida p { font-size: 1.1rem; color: #666; line-height: 1.4; }
+
+        .btn-contenedor { width: 100%; margin-top: 20px; }
+
+        .btn-accion {
+            width: 100%; height: 75px;
+            margin: 10px 0; border: none; border-radius: 20px;
+            font-size: 1.1rem; font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            text-transform: uppercase;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-principal { background-color: var(--salmon); color: white; }
+        .btn-texto { background-color: var(--dorado); color: white; }
+        
+        /* Estilo para los botones secundarios de fotos */
+        .foto-opciones {
+            display: none; /* Oculto por defecto */
+            flex-direction: column;
+            width: 100%;
+            background: #eee;
+            padding: 10px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            animation: fadeInDown 0.4s ease;
+        }
+
+        .btn-secundario {
+            height: 60px;
+            background-color: var(--blanco);
+            color: var(--negro);
+            border: 2px solid var(--salmon);
+            margin: 5px 0;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-accion:active { transform: scale(0.98); opacity: 0.9; }
+        .icon { margin-right: 15px; font-size: 1.6rem; }
+        
+        input[type="file"] { display: none; }
+
+        #mensaje-estado {
+            margin-top: 25px; padding: 15px; border-radius: 15px;
+            font-weight: bold; text-align: center;
+            display: none; width: 100%;
+            box-sizing: border-box;
+        }
+
+        .footer { padding: 30px; font-size: 0.8rem; color: #bbb; text-align: center; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>ZELPIK | <span>NATI</span></h1>
+    </div>
+
+    <div class="main">
+        <div class="bienvenida">
+            <h3>¡Hola! ✨</h3>
+            <p>Elegí cómo querés participar hoy.</p>
+        </div>
+
+        <div class="btn-contenedor">
+            <button class="btn-accion btn-principal" id="btn-foto-main" onclick="toggleFotoOpciones()">
+                <span class="icon">📷</span> ENVIAR FOTO
+            </button>
+
+            <div id="opciones-contenedor" class="foto-opciones">
+                <button class="btn-accion btn-secundario" onclick="document.getElementById('input-camara').click()">
+                    <span class="icon">🤳</span> SACAR SELFIE
+                </button>
+                <button class="btn-accion btn-secundario" onclick="document.getElementById('input-galeria').click()">
+                    <span class="icon">🖼️</span> ELEGIR GALERÍA
+                </button>
+            </div>
+            
+            <input type="file" id="input-camara" accept="image/*" capture="user">
+            <input type="file" id="input-galeria" accept="image/*">
+
+            <button class="btn-accion btn-texto" onclick="enviarMensaje()">
+                <span class="icon">✍️</span> ENVIAR MENSAJE
+            </button>
+        </div>
+
+        <div id="mensaje-estado"></div>
+    </div>
+
+    <div class="footer">
+        ZELPIK INTERACTIVE EXPERIENCE &copy; 2025
+    </div>
+
+    <script>
+        const socket = io();
+        const estado = document.getElementById('mensaje-estado');
+
+        function toggleFotoOpciones() {
+            const panel = document.getElementById('opciones-contenedor');
+            const estaAbierto = panel.style.display === 'flex';
+            panel.style.display = estaAbierto ? 'none' : 'flex';
+        }
+
+        function mostrarFeedback(texto, fondo, letra) {
+            estado.innerText = texto;
+            estado.style.backgroundColor = fondo;
+            estado.style.color = letra;
+            estado.style.display = 'block';
+            setTimeout(() => { estado.style.display = 'none'; }, 5000);
+        }
+
+        function subirAlServidor(archivoBlob) {
+            const formData = new FormData();
+            formData.append('foto', archivoBlob, 'foto.jpg');
+
+            fetch('/upload', { method: 'POST', body: formData })
+            .then(res => {
+                if(!res.ok) throw new Error();
+                mostrarFeedback("¡Foto enviada al muro! ✨", "#d4edda", "#155724");
+                document.getElementById('opciones-contenedor').style.display = 'none';
+            })
+            .catch(() => {
+                mostrarFeedback("Error al subir. Reintentá.", "#f8d7da", "#721c24");
+            });
+        }
+
+        function procesarArchivo(input) {
+            if (input.files && input.files[0]) {
+                const original = input.files[0];
+                mostrarFeedback("Procesando imagen... ⏳", "#fff3cd", "#856404");
+
+                const reader = new FileReader();
+                reader.readAsDataURL(original);
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 1200;
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext("2d");
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            canvas.toBlob((blob) => {
+                                subirAlServidor(blob || original);
+                            }, 'image/jpeg', 0.8);
+                        } catch (err) {
+                            subirAlServidor(original);
+                        }
+                    }
+                }
+                input.value = ""; // Limpiar el input
+            }
+        }
+
+        // Escuchamos ambos inputs
+        document.getElementById('input-camara').addEventListener('change', function() { procesarArchivo(this); });
+        document.getElementById('input-galeria').addEventListener('change', function() { procesarArchivo(this); });
+
+        function enviarMensaje() {
+            const saludo = prompt("Escribí tu mensaje para Nati:");
+            if (saludo && saludo.trim() !== "") {
+                socket.emit('nuevo_mensaje', saludo.trim());
+                mostrarFeedback("¡Mensaje enviado con éxito! ✍️", "#d4edda", "#155724");
+            }
+        }
+    </script>
+</body>
+</html>

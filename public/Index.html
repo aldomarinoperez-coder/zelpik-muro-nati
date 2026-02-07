@@ -215,7 +215,7 @@
         document.getElementById('input-galeria').addEventListener('change', function() { procesarArchivo(this); });
 
         function enviarMensaje() {
-            const saludo = prompt("Escribí tu mensaje para Nati:");
+            const saludo = prompt("Escribí tu mensaje para Jaqueline:");
             if (saludo && saludo.trim() !== "") {
                 socket.emit('nuevo_mensaje', saludo.trim());
                 mostrarFeedback("¡Mensaje enviado con éxito! ✍️", "#d4edda", "#155724");
@@ -225,4 +225,5 @@
 </body>
 
 </html>
+
 

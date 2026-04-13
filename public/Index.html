@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zelpik - Leandro y Sabrina</title>
+    <title>Zelpik - Iskandar y Hernán</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
@@ -101,7 +101,7 @@
 <body>
 
     <div class="header">
-        <h1>ZELPIK | <span>LEANDRO Y SABRINA</span></h1>
+        <h1>ZELPIK | <span>ISKANDAR Y HERNÁN</span></h1>
     </div>
 
     <div class="main">
@@ -215,7 +215,7 @@
         document.getElementById('input-galeria').addEventListener('change', function() { procesarArchivo(this); });
 
         function enviarMensaje() {
-            const saludo = prompt("Escribí tu mensaje para Leandro y Sabrina:");
+            const saludo = prompt("Escribí tu mensaje para Iskandar y Hernán:");
             if (saludo && saludo.trim() !== "") {
                 socket.emit('nuevo_mensaje', saludo.trim());
                 mostrarFeedback("¡Mensaje enviado con éxito! ✍️", "#d4edda", "#155724");

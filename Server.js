@@ -5,11 +5,13 @@ const multer = require('multer');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const fs = require('fs'); // Librería para guardar archivos
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+
+// Lista para guardar mensajes en la memoria del servidor
+let historialMensajes = [];
 
 // 🛠️ CONFIGURACIÓN DE CLOUDINARY
 cloudinary.config({ 
@@ -35,6 +37,11 @@ app.use(express.json());
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'Index.html')); });
 app.get('/muro', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'Pantalla.html')); });
 
+// NUEVA RUTA PARA RECUPERAR MENSAJES
+app.get('/ver-mensajes', (req, res) => {
+    res.json(historialMensajes);
+});
+
 // Ruta para subir fotos
 app.post('/upload', upload.single('foto'), (req, res) => {
     if (req.file && req.file.path) {
@@ -46,23 +53,22 @@ app.post('/upload', upload.single('foto'), (req, res) => {
     }
 });
 
-// GESTIÓN DE MENSAJES Y MEMORIA
 io.on('connection', (socket) => {
     socket.on('nuevo_mensaje', (msg) => {
-        // 1. Guardar en el archivo de texto para el agasajado
         const fecha = new Date().toLocaleString();
-        const entradaLog = `[${fecha}] Mensaje: ${msg}\n`;
         
-        fs.appendFile('MEMORIA_DEL_EVENTO.txt', entradaLog, (err) => {
-            if (err) console.error("Error al guardar mensaje en el archivo:", err);
-        });
+        // Guardamos en la lista interna
+        historialMensajes.push({ fecha, mensaje: msg });
 
-        // 2. Emitir a la pantalla (tipo texto)
+        // Imprimimos en los "Registros" de Render para que lo veas ahí también
+        console.log(`📩 MENSAJE RECIBIDO: [${fecha}] ${msg}`);
+
+        // Enviamos a la pantalla
         io.emit('nuevo_contenido', { tipo: 'texto', mensaje: msg });
     });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ ZELPIK ONLINE - MEMORIA ACTIVA`);
+    console.log(`✅ ZELPIK ONLINE - MODO HISTORIAL ACTIVADO`);
 });

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zelpik - Muro de Nati</title>
+    <title>Zelpik - Muro de Proyección</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
@@ -91,7 +91,6 @@
         const tiempoFotos = 8000;
         const tiempoQR = 20000;
 
-        // Generar QR dinámico
         new QRCode(document.getElementById("qrcode-container"), {
             text: window.location.origin,
             width: 350,
@@ -135,13 +134,16 @@
         socket.on('nuevo_contenido', (data) => {
             clearTimeout(timerCarrusel);
             if (data.tipo === 'foto') {
+                // Las fotos se guardan para el carrusel infinito
                 fotosHistorial.push(data.url);
                 imgDisplay.src = data.url;
                 switchSlide('foto');
             } else {
+                // Los mensajes se muestran 10s y NO se guardan en el carrusel
                 txtDisplay.innerText = data.mensaje;
                 switchSlide('texto');
             }
+            // Vuelve al carrusel normal después de 10 segundos
             setTimeout(ejecutarPasoCarrusel, 10000);
         });
 
@@ -149,6 +151,3 @@
     </script>
 </body>
 </html>
-
-
-
